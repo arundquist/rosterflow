@@ -14,7 +14,7 @@ class Layers
     return strtoupper($string);
   }
 
-  static function correlateSingleClassAndFutureTerm($studentlist, $earlyclass, $futureterm,$min=3)
+  static function correlateSingleClassAndOtherTerm($studentlist, $earlyclass, $futureterm,$future=1,$min=3)
   {
     $students=implode(',', $studentlist);
     $list=[];
@@ -34,7 +34,13 @@ class Layers
         ORDER BY q DESC");
     foreach ($resultafter AS $r)
     {
-        $list[]="['$firstcourse->subject $firstcourse->number $firstcourse->term', '$r->subject $r->number $r->term', $r->q]";
+        if ($future)
+        {
+          $list[]="['$firstcourse->subject $firstcourse->number $firstcourse->term', '$r->subject $r->number $r->term', $r->q]";
+        } else
+        {
+          $list[]="['$r->subject $r->number $r->term','$firstcourse->subject $firstcourse->number $firstcourse->term', $r->q]";
+        }
     }
     $newcourses=collect($resultafter)->pluck('course_id')->toArray();
     //return implode(', ',$list);
@@ -42,7 +48,7 @@ class Layers
     return ['newcourses'=>$newcourses, 'connections'=>$list];
   }
 
-  static function oneLayerToAnother($studentlist, $earlylist, $futureterm, $min=3)
+  static function oneLayerToAnother($studentlist, $earlylist, $futureterm, $future=1, $min=3)
   {
     $fulllist=[];
     $nextcourses=[];
@@ -50,7 +56,7 @@ class Layers
     foreach($earlylist AS $earlyclass)
     {
       //$fulllist[]=self::correlateSingleClassAndFutureTerm($studentlist,$earlyclass,$futureterm,$min);
-      $current=self::correlateSingleClassAndFutureTerm($studentlist,$earlyclass,$futureterm,$min);
+      $current=self::correlateSingleClassAndOtherTerm($studentlist,$earlyclass,$futureterm,$future,$min);
       $nextcourses=array_unique(array_flatten([$nextcourses,$current['newcourses']]));
       $layerconnections=array_flatten([$layerconnections, $current['connections']]);
     };
@@ -64,15 +70,29 @@ class Layers
     $students=$course->students()->pluck('id')->toArray();
     $startlist=[$firstcourse];
     $allconnections=[];
-    $curterm=$course->term;
-    for ($x=0; $x<$numterms; $x++)
+    $future=1;
+    $nterms=$numterms;
+    if ($numterms<0)
     {
-      $curterm=self::nextTerm($curterm);
-      $nextlayer=self::oneLayerToAnother($students, $startlist, $curterm, $min);
+      $nterms=-$numterms;
+      $future=0;
+    };
+    $curterm=$course->term;
+    for ($x=0; $x<$nterms; $x++)
+    {
+      if ($numterms<0)
+      {
+        $curterm=self::previousTerm($curterm);
+      } else
+      {
+        $curterm=self::nextTerm($curterm);
+      }
+
+      $nextlayer=self::oneLayerToAnother($students, $startlist, $curterm, $future, $min);
       $allconnections=array_flatten([$allconnections, $nextlayer['connections']]);
       $startlist=$nextlayer['newcourses'];
     }
-    
+
     //dd($allconnections);
     return $allconnections;
   }
@@ -85,6 +105,18 @@ class Layers
       $nextterm=$currentterm+2;
     } else {
       $nextterm=$currentterm+98;
+    };
+    return $nextterm;
+  }
+
+  static function previousTerm($currentterm)
+  {
+    $sem=$currentterm % 100;
+    if ($sem == 11)
+    {
+      $nextterm=$currentterm-98;
+    } else {
+      $nextterm=$currentterm-2;
     };
     return $nextterm;
   }
