@@ -31,6 +31,26 @@ Route::get('trackcourse/{course_id}/{num}/{min?}', ['middleware' => 'auth.basic'
     ['fulllist'=>$string]);
 }])->name('track');
 
+Route::get('noterms', function()
+{
+  $allconnections=Layers::namedLayers([[7391],[4888,7841],[2190]]);
+  $string=implode(',',$allconnections);
+  return view('trackclass',
+    ['fulllist'=>$string]);
+});
+
+Route::get('majorlevels/{dept}/{min?}', ['middleware' => 'auth.basic', function($dept, $min=3)
+{
+  $level1000=Layers::getLevelNumbers($dept, 1000, 1999);
+  $level3000=Layers::getLevelNumbers($dept, 3000, 3999);
+  $level5000=Layers::getLevelNumbers($dept, 5000, 5999);
+  $allconnections=Layers::namedLayers([$level1000,$level3000,$level5000],$min);
+  $string=implode(',',$allconnections);
+  return view('trackclass',
+    ['fulllist'=>$string]);
+
+}]);
+
 Route::get('/test/{id}/{min?}/{join?}', ['middleware' => 'auth.basic', function($id, $min=3,$join=0) {
     $course=App\Course::findOrFail($id);
     $term=$course->term;

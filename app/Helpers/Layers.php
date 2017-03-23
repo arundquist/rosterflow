@@ -121,5 +121,87 @@ class Layers
     return $nextterm;
   }
 
+  static function correlateSingleNumToListOfNums($initial, $listoffinal,$min=3)
+  {
+    $startclass=\App\Course::findOrFail($initial);
+    $initialcourses=self::getSimilarClasses($startclass);
+    $instartlist=implode(', ', $initialcourses);
+    $finallist=[];
+    foreach ($listoffinal AS $final)
+    {
+      $nextclass=\App\Course::findOrFail($final);
+      $finallist[]=self::getSimilarClasses($nextclass);
+    };
+    $finallist=array_flatten($finallist);
+    $finallist=implode(', ', $finallist);
+    $list=[];
+    //dd($finallist);
+    $resultafter=\DB::Select("SELECT cs.course_id,c.*, count(*) AS q, concat(c.subject,c.number) AS name
+        FROM course_student cs, courses c
+        WHERE student_id IN (
+            SELECT student_id
+            FROM course_student
+            WHERE course_id IN ($instartlist)
+        )
+        AND c.id=cs.course_id
+        AND c.id IN ($finallist)
+        GROUP BY name
+        HAVING q>=$min
+        ORDER BY q DESC");
+    foreach ($resultafter AS $r)
+    {
+        $list[]="['$startclass->subject $startclass->number', '$r->subject $r->number', $r->q]";
+    }
+    //$newcourses=collect($resultafter)->pluck('course_id')->toArray();
+    //return implode(', ',$list);
+    //dd(['newcourses'=>$newcourses, 'connections'=>$list]);
+    return $list;
+  }
+
+  static function oneLayerToAnotherNoTerm($earlylist, $nextlist, $min=3)
+  {
+    $layerconnections=[];
+    foreach($earlylist AS $earlyclass)
+    {
+      //$fulllist[]=self::correlateSingleClassAndFutureTerm($studentlist,$earlyclass,$futureterm,$min);
+      $current=self::correlateSingleNumToListOfNums($earlyclass, $nextlist,$min);
+      $layerconnections=array_flatten([$layerconnections, $current]);
+    };
+    //dd(['newcourses'=>$nextcourses, 'connections'=>$layerconnections]);
+    return $layerconnections;
+  }
+
+  static function namedLayers($layers, $min=3)
+  {
+    $numlayers=count($layers);
+    $allconnections=[];
+    for ($x=0; $x<$numlayers-1; $x++)
+    {
+      $nextlayer=self::oneLayerToAnotherNoTerm($layers[$x],$layers[$x+1],$min);
+      $allconnections=array_flatten([$allconnections, $nextlayer]);
+    }
+
+    //dd($allconnections);
+    return $allconnections;
+  }
+
+  static function getSimilarClasses($startclass)
+  {
+    //$startclass=\App\Course::findOrFail($initialid);
+    $initialcourses=\App\Course::where('subject',$startclass->subject)
+                      ->where('number',$startclass->number)
+                      ->get()->pluck('id')->toArray();
+    return $initialcourses;
+  }
+
+  static function getLevelNumbers($dept,$min,$max)
+  {
+    $level=\App\Course::where('subject',$dept)
+              ->where('number','<=',$max)
+              ->where('number','>=', $min)
+              ->select('number','id')->groupBy('number')->pluck('id')->toArray();
+    return array_flatten($level);
+  }
+
 
 }
