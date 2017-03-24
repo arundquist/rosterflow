@@ -44,6 +44,23 @@
 
 
 <div id="sankey_basic" style="width: 900px; height: 600px;"></div>
-
+@if(isset($enrollment))
+  enrollment = {{$enrollment}}
+@endif
+@if(isset($courseinfo))
+  <table class='table table-bordered'>
+    <tr>
+      @foreach($courseinfo AS $layer)
+        <td>
+          <ul class='list-group'>
+            @foreach ($layer AS $course)
+              <li class='list-group-item'><a href='{{route('singlecourse',['id'=>$course['course']->id,'min'=>10])}}'>{{$course['course']->subject}}{{$course['course']->number}} ({{$course['enrollment']}})</a></li>
+            @endforeach
+          </ul>
+        </td>
+      @endforeach
+    </tr>
+  </table>
+@endif
 </div>
 @endsection

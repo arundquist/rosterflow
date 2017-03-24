@@ -158,6 +158,40 @@ class Layers
     return $list;
   }
 
+  static function singleCourseNoTerm($id, $future, $min=3)
+  {
+    $startclass=\App\Course::findOrFail($id);
+    $similar=self::getSimilarClasses($startclass);
+    $instartlist=implode(',',$similar);
+    $compare="<";
+    if($future){$compare=">";};
+    $resultafter=\DB::Select("SELECT cs.course_id,c.*, count(*) AS q, concat(c.subject,c.number) AS name
+        FROM course_student cs, courses c
+        WHERE student_id IN (
+            SELECT student_id
+            FROM course_student
+            WHERE course_id IN ($instartlist)
+        )
+        AND c.id=cs.course_id
+        AND c.number $compare $startclass->number
+        GROUP BY name
+        HAVING q>=$min
+        ORDER BY q DESC");
+    foreach ($resultafter AS $r)
+      {
+          if($future)
+          {
+            $list[]="['$startclass->subject $startclass->number', '$r->subject $r->number', $r->q]";
+          } else {
+            $list[]="['$r->subject $r->number','$startclass->subject $startclass->number',  $r->q]";
+          }
+      }
+        //$newcourses=collect($resultafter)->pluck('course_id')->toArray();
+        //return implode(', ',$list);
+        //dd(['newcourses'=>$newcourses, 'connections'=>$list]);
+    return $list;
+  }
+
   static function oneLayerToAnotherNoTerm($earlylist, $nextlist, $min=3)
   {
     $layerconnections=[];
@@ -192,6 +226,18 @@ class Layers
                       ->where('number',$startclass->number)
                       ->get()->pluck('id')->toArray();
     return $initialcourses;
+  }
+
+  static function getSimilarEnrollment($id)
+  {
+    $class=\App\Course::findOrFail($id);
+    $sim=self::getSimilarClasses($class);
+    $string=implode(',',$sim);
+    $results=\DB::Select("SELECT count(*) AS q
+        FROM course_student cs
+        WHERE cs.course_id IN ($string)");
+    return $results[0]->q;
+
   }
 
   static function getLevelNumbers($dept,$min,$max)

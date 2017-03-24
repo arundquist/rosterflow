@@ -1,5 +1,5 @@
 <?php
-
+use Illuminate\Http\Request;
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -50,6 +50,58 @@ Route::get('majorlevels/{dept}/{min?}', ['middleware' => 'auth.basic', function(
     ['fulllist'=>$string]);
 
 }]);
+
+Route::get('allcourses', function()
+{
+  $courses=App\Course::select('id', DB::raw('CONCAT(subject,number) AS name'),'subject')
+        ->groupBy("name")->get();
+  $biglist=[];
+  foreach ($courses AS $course)
+  {
+    $biglist[$course->subject][$course->id]=$course->name;
+  }
+  return view('allcourses',
+    ['courses'=>$biglist]);
+});
+
+Route::post('layers', function(Request $request)
+{
+  $chosen=$request->input('layer');
+  return view('chosencourses',
+    ['chosen'=>$chosen]);
+})->name('layers');
+
+Route::post('layersready', ['middleware' => 'auth.basic', function(Request $request)
+{
+  $layersinput=$request->input('layers');
+  $layers=[];
+  $courseinfo=[];
+  foreach($layersinput AS $key=>$value)
+  {
+    $layers[$value][]=$key;
+    $c=App\Course::findOrFail($key);
+    $courseinfo[$value][]=['course'=>$c,'enrollment'=>Layers::getSimilarEnrollment($key)];
+  };
+  $allconnections=Layers::namedLayers($layers,$request->input('min'));
+  $string=implode(',',$allconnections);
+  return view('trackclass',
+    ['fulllist'=>$string,
+      'courseinfo'=>$courseinfo]);
+
+}])->name('layersready');
+
+Route::get('singlecourse/{id}/{min?}', ['middleware'=>'auth.basic', function($id, $min=3)
+{
+  $enrollment=Layers::getSimilarEnrollment($id);
+  $pastconnections=Layers::singleCourseNoTerm($id, 0, $min);
+  $futureconnections=Layers::singleCourseNoTerm($id, 1, $min);
+  $allconnections=array_flatten([$pastconnections,$futureconnections]);
+  $string=implode(',',$allconnections);
+  return view('trackclass',
+    ['fulllist'=>$string,
+      'enrollment'=>$enrollment]);
+}])->name('singlecourse');
+
 
 Route::get('/test/{id}/{min?}/{join?}', ['middleware' => 'auth.basic', function($id, $min=3,$join=0) {
     $course=App\Course::findOrFail($id);
