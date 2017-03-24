@@ -10,7 +10,7 @@
   <h2>{{$dept}}</h2>
   <ul class='list-inline'>
     @foreach ($dcourses AS $id=>$c)
-      <li><input type='checkbox' name='layer[{{$id}}]' value='{{$c}}'>{{$c}}</li>
+      <li><input type='checkbox' name='layer[{{$id}}]' value='{{$c}}'><a href='{{route('singlecourse',['id'=>$id,'min'=>10])}}'>{{$c}}</a></li>
     @endforeach
   </ul>
   <hr/>
