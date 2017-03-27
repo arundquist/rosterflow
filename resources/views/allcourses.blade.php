@@ -7,7 +7,7 @@
 <form action='{{route('layers')}}' method='POST'>
   {{ csrf_field() }}
 @foreach ($courses AS $dept=>$dcourses)
-  <h2>{{$dept}}</h2>
+  <h2>{{$dept}} <a href='{{route('majorlevels', [$dept])}}'>1000-3000-5000 version</a></h2>
   <ul class='list-inline'>
     @foreach ($dcourses AS $id=>$c)
       <li><input type='checkbox' name='layer[{{$id}}]' value='{{$c}}'><a href='{{route('singlecourse',['id'=>$id,'min'=>10])}}'>{{$c}}</a></li>

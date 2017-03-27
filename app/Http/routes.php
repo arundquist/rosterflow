@@ -46,10 +46,21 @@ Route::get('majorlevels/{dept}/{min?}', ['middleware' => 'auth.basic', function(
   $level5000=Layers::getLevelNumbers($dept, 5000, 5999);
   $allconnections=Layers::namedLayers([$level1000,$level3000,$level5000],$min);
   $string=implode(',',$allconnections);
+  $alllevels=[$level1000,$level3000,$level5000];
+  $courseinfo=[];
+  foreach ($alllevels AS $layernum=>$layerlist)
+  {
+    foreach ($layerlist AS $courseid)
+    {
+      $c=App\Course::findOrFail($courseid);
+      $courseinfo[$layernum][]=['course'=>$c,'enrollment'=>Layers::getSimilarEnrollment($courseid)];
+    }
+  }
   return view('trackclass',
-    ['fulllist'=>$string]);
+    ['fulllist'=>$string,
+      'courseinfo'=>$courseinfo]);
 
-}]);
+}])->name('majorlevels');
 
 Route::get('allcourses', function()
 {
