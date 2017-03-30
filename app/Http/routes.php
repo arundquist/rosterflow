@@ -101,7 +101,10 @@ Route::post('layersready', ['middleware' => 'auth.basic', function(Request $requ
   {
     $level=new App\Level;
     $level->name=$levels;
-    $level->levels=$string;
+    //puts [[1,2],[3],[4,5,6]] into database.
+    // downside: needs to be run again
+    // upside: editable
+    $level->levels=json_encode(array_values($layers));
     $level->save();
     $savedid=$level->id;
   }
