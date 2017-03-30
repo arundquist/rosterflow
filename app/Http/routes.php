@@ -95,9 +95,20 @@ Route::post('layersready', ['middleware' => 'auth.basic', function(Request $requ
   };
   $allconnections=Layers::namedLayers($layers,$request->input('min'));
   $string=implode(',',$allconnections);
+  $levels=$request->input('levels');
+  $savedid='';
+  if ($levels != '')
+  {
+    $level=new App\Level;
+    $level->name=$levels;
+    $level->levels=$string;
+    $level->save();
+    $savedid=$level->id;
+  }
   return view('trackclass',
     ['fulllist'=>$string,
-      'courseinfo'=>$courseinfo]);
+      'courseinfo'=>$courseinfo,
+      'savedid'=>$savedid]);
 
 }])->name('layersready');
 

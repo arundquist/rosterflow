@@ -13,6 +13,10 @@
     </li>
   @endforeach
   <input type='text' name='min' value='3'>Minimum students to track<br/>
+  <div>
+    If you want to save this set of levels, enter a name here:
+    <input type='text' name='levels'>
+  </div>
 <input type='submit' name='submit'>
 </form>
 </div>
