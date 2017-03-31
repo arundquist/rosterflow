@@ -135,7 +135,14 @@ Route::get('savedlevel/{id}', ['middleware'=>'auth.basic', function($id)
   return view('trackclass',
     ['fulllist'=>$string,
     'courseinfo'=>$courseinfo]);
-}]);
+}])->name('savedlevel');
+
+Route::get('savedlevel', function()
+{
+  $saved=App\Level::all();
+  return view('savedlevels',
+    ['saved'=>$saved]);
+});
 
 Route::get('singlecourse/{id}/{min?}', ['middleware'=>'auth.basic', function($id, $min=3)
 {
