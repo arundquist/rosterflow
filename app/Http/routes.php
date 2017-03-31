@@ -115,6 +115,28 @@ Route::post('layersready', ['middleware' => 'auth.basic', function(Request $requ
 
 }])->name('layersready');
 
+Route::get('savedlevel/{id}', ['middleware'=>'auth.basic', function($id)
+{
+  $level=App\Level::findOrFail($id);
+  $levels=$level->levels;
+  // it's stored as a string but looks like an array. This seems to fix it:
+  eval("\$levels = $levels;");
+  $allconnections=Layers::namedLayers($levels,3);
+  $string=implode(',',$allconnections);
+  $courseinfo=[];
+  foreach($levels AS $key=>$level)
+  {
+    foreach ($level AS $course)
+    {
+      $c=App\Course::findOrFail($course);
+      $courseinfo[$key][]=['course'=>$c,'enrollment'=>Layers::getSimilarEnrollment($course)];
+    }
+  };
+  return view('trackclass',
+    ['fulllist'=>$string,
+    'courseinfo'=>$courseinfo]);
+}]);
+
 Route::get('singlecourse/{id}/{min?}', ['middleware'=>'auth.basic', function($id, $min=3)
 {
   $enrollment=Layers::getSimilarEnrollment($id);
