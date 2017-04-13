@@ -121,20 +121,12 @@ Route::get('savedlevel/{id}', ['middleware'=>'auth.basic', function($id)
   $levels=$level->levels;
   // it's stored as a string but looks like an array. This seems to fix it:
   eval("\$levels = $levels;");
-  $allconnections=Layers::namedLayers($levels,3);
-  $string=implode(',',$allconnections);
-  $courseinfo=[];
-  foreach($levels AS $key=>$level)
-  {
-    foreach ($level AS $course)
-    {
-      $c=App\Course::findOrFail($course);
-      $courseinfo[$key][]=['course'=>$c,'enrollment'=>Layers::getSimilarEnrollment($course)];
-    }
-  };
+  session(['levels'=>$levels]);
+  $prepared=Layers::prepareLayers($levels);
   return view('trackclass',
-    ['fulllist'=>$string,
-    'courseinfo'=>$courseinfo]);
+    ['fulllist'=>$prepared['string'],
+    'courseinfo'=>$prepared['courseinfo'],
+    'level_id'=>$id]);
 }])->name('savedlevel');
 
 Route::get('savedlevel', function()
@@ -143,6 +135,65 @@ Route::get('savedlevel', function()
   return view('savedlevels',
     ['saved'=>$saved]);
 });
+
+Route::get('moveitem/{level_id}/{item_id}/{layer}/{left}', ['middleware'=>'auth.basic', function($level_id,$item_id,$layer,$left)
+{
+  // $level=App\Level::findOrFail($level_id);
+  // $levels=$level->levels;
+  // eval("\$levels = $levels;");
+  $levels=session('levels');
+  //$currentlayer=$levels[$layer];
+
+  // this next part removes the item from whereever it is
+  $search = $item_id;
+  $result = array_map(function ($value) use ($search) {
+     if(($key = array_search($search, $value)) !== false) {
+        unset($value[$key]);
+     }
+     return $value;
+   }, $levels);
+/* Note that this won't work well because everything will get saved if
+you just say something like $level->save() down below.
+
+Need to think about using session variables to do this and then something like
+a "save this version" or something
+*/
+  //prepare extra layers if needed
+  if(($left==1)&&($layer==0))
+  {
+    array_unshift($result,[]);
+    $layer=1;
+  };
+  if (($left==0)&&($layer==count($levels)-1))
+  {
+    $result[]=[];
+  };
+
+  //now place the item in the new layer
+  if ($left==1)
+  {
+    $result[$layer-1][]=$item_id;
+  } else {
+    $result[$layer+1][]=$item_id;
+  };
+
+  //now make sure there are no empty Layers
+  $result= array_filter(array_map('array_filter', $result));
+  //dd($result);
+  //had to do this because the keys got screwed up.
+  // not sure if it matters but the array has strings in it and not integers
+  $result=array_values($result);
+
+  session(['levels'=>$result]);
+  $prepared=Layers::prepareLayers($result);
+  return view('trackclass',
+    ['fulllist'=>$prepared['string'],
+    'courseinfo'=>$prepared['courseinfo'],
+    'level_id'=>$level_id]);
+  //dd([$levels,$result]);
+
+
+}])->name('moveitem');
 
 Route::get('singlecourse/{id}/{min?}', ['middleware'=>'auth.basic', function($id, $min=3)
 {

@@ -249,5 +249,21 @@ class Layers
     return array_flatten($level);
   }
 
+  static function prepareLayers($levels)
+  {
+    $allconnections=Layers::namedLayers($levels,3);
+    $string=implode(',',$allconnections);
+    $courseinfo=[];
+    foreach($levels AS $key=>$level)
+    {
+      foreach ($level AS $course)
+      {
+        $c=\App\Course::findOrFail($course);
+        $courseinfo[$key][]=['course'=>$c,'enrollment'=>Layers::getSimilarEnrollment($course)];
+      }
+    };
+    return ['string'=>$string, 'courseinfo'=>$courseinfo];
+  }
+
 
 }

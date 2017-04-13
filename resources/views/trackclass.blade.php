@@ -50,11 +50,18 @@
 @if(isset($courseinfo))
   <table class='table table-bordered'>
     <tr>
-      @foreach($courseinfo AS $layer)
+      @foreach($courseinfo AS  $key=>$layer)
         <td>
           <ul class='list-group'>
             @foreach ($layer AS $course)
-              <li class='list-group-item'><a href='{{route('singlecourse',['id'=>$course['course']->id,'min'=>10])}}'>{{$course['course']->subject}}{{$course['course']->number}} ({{$course['enrollment']}})</a></li>
+              <li class='list-group-item'>
+                <a href='{{route('singlecourse',['id'=>$course['course']->id,'min'=>10])}}'>
+                  {{$course['course']->subject}}{{$course['course']->number}} ({{$course['enrollment']}})
+                  <a href='{{route('moveitem',[$level_id,$course['course']->id,$key,1])}}'>&#x21D0;</a>
+                  <a href='{{route('moveitem',[$level_id,$course['course']->id,$key,0])}}'>&#x21D2;</a>
+                  <a href=''>&#x2573;</a>
+                </a>
+              </li>
             @endforeach
           </ul>
         </td>
