@@ -57,9 +57,11 @@
               <li class='list-group-item'>
                 <a href='{{route('singlecourse',['id'=>$course['course']->id,'min'=>10])}}'>
                   {{$course['course']->subject}}{{$course['course']->number}} ({{$course['enrollment']}})
+                  @if(isset($level_id))
                   <a href='{{route('moveitem',[$level_id,$course['course']->id,$key,1])}}'>&#x21D0;</a>
                   <a href='{{route('moveitem',[$level_id,$course['course']->id,$key,0])}}'>&#x21D2;</a>
                   <a href=''>&#x2573;</a>
+                  @endif
                 </a>
               </li>
             @endforeach
